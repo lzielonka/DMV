@@ -36,6 +36,7 @@
     <div class="row">
         <div class="col-xs-12">
             <h1 class="text-center">DMV</h1>
+            <button id="redeploy" class="btn btn-danger" style="display: inline-block; float: right; margin-top: -40px;">Redeploy</button>
             <hr/>
         </div>
     </div>
@@ -50,24 +51,25 @@
                     <div class="panel-body">
                         <div class="col-xs-12">
                             <h4>Role Controls (as Master Clerk)</h4>
-                            <div class="col-xs-4">
+                            <div class="col-xs-3">
                                 <h4>Target Address:</h4>
                                 <select id="sel-target" name="target" class="form-control">
-                                    <option value="mech">Mechanic</option>
                                     <option value="clerk">Clerk</option>
+                                    <option value="master">Master Clerk</option>
+                                    <option value="mech">Mechanic</option>
                                     <option value="ins">Insurer</option>
                                     <option value="cit">Citizen</option>
                                 </select>
                             </div>
-                            <div class="col-xs-4">
+                            <div class="col-xs-3">
                                 <h4>Role:</h4>
                                 <select id="sel-role" name="role" class="form-control">
-                                    <option value="mech">Mechanic</option>
                                     <option value="clerk">Clerk</option>
+                                    <option value="mech">Mechanic</option>
                                     <option value="ins">Insurer</option>
                                 </select>
                             </div>
-                            <div class="col-xs-4">
+                            <div class="col-xs-6">
                                 <h4>Action:</h4>
                                 <button id="grant" class="btn btn-success"
                                         style="display: inline-block">Grant
@@ -75,12 +77,12 @@
                                 <button id="revoke" class="btn btn-danger"
                                         style="display: inline-block; margin-left: 15px;">Revoke
                                 </button>
+                                <button id="grant-def" class="btn btn-primary"
+                                        style="display: inline-block; margin-left: 15px;">Default
+                                </button>
                             </div>
                             <div class="col-xs-12">
-                                <div class="container">
-                                    <h2>Sender Account</h2>
-                                    <p>Account from which function call is sent:</p>
-                                    <form>
+                                    <h2>Pick sender account</h2>
                                         <label class="radio-inline">
                                             <input type="radio" name="optradio" value="clerk" checked class="actor">Clerk
                                         </label>
@@ -93,8 +95,6 @@
                                         <label class="radio-inline">
                                             <input type="radio" name="optradio" value="cit" class="actor">Citizen
                                         </label>
-                                    </form>
-                                </div>
                             </div>
                             <div class="col-xs-12">
                                 <div class="col-xs-4">

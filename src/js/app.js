@@ -24,30 +24,63 @@ App = {
         return App.initContract();
     },
 
+    initAccounts: function() {
+        web3.eth.getAccounts().then(accounts => {
+            App.accounts = accounts;
+            App.masterClerk = App.accounts[0];
+            App.clerk = App.accounts[1];
+            App.mechanic = App.accounts[2];
+            App.citizen = App.accounts[3];
+            App.insurer = App.accounts[4];
+        });
+    },
+    generateVINNumbers: function() {
+        let gen = $('#generate');
+        for (let i = 0; i < 14; i++) {
+            gen.trigger('click');
+        }
+    },
+
     initContract: function () {
         $.getJSON('VehicleInformation.json', function (data) {
             let contract = new web3.eth.Contract(data.abi);
             contract.setProvider(web3.currentProvider);
             App.contracts.VehicleInformation = contract;
-            App.contracts.VehicleInformation._address = '0x4fd86d51824e91ff32239c02cde8e7cc1ef4b218';
+            App.contracts.VehicleInformation._address = '0x8bacacbbb3e21f3eb207ea7cbfb10311cb510475';
         }).then(() => {
-            web3.eth.getAccounts().then(accounts => {
-                App.accounts = accounts;
-                App.masterClerk = App.accounts[0];
-                App.clerk = App.accounts[1];
-                App.mechanic = App.accounts[2];
-                App.citizen = App.accounts[3];
-                App.insurer = App.accounts[4];
-            });
+            App.initAccounts();
         }).then(() => {
             App.bindEvents();
         }).then(() => {
-            let gen = $('#generate');
-            for (let i = 0; i < 15; i++) {
-                gen.trigger('click');
-            }
-        }).then(() => {
             App.displayResult('App ready', true);
+        });
+    },
+
+    deployContract: function() {
+        if (typeof web3 !== 'undefined') {
+            web3 = new Web3(web3.currentProvider);
+        } else {
+            web3 = new Web3('http://127.0.0.1:8545');
+        }
+        web3.eth.getAccounts().then(accounts => {
+            App.accounts = accounts;
+            App.masterClerk = App.accounts[0];
+            App.clerk = App.accounts[1];
+            App.mechanic = App.accounts[2];
+            App.citizen = App.accounts[3];
+            App.insurer = App.accounts[4];
+        }).then(()=> {
+            $.getJSON('VehicleInformation.json', function (data) {
+                let contract = new web3.eth.Contract(data.abi);
+                // console.log(data);
+                contract.setProvider(web3.currentProvider);
+                contract.deploy({data: data.bytecode}).send({from: App.masterClerk, gas: 6000000, gasPrice: '30000000'}).then((deployedContract) => {
+                    App.contracts.VehicleInformation = deployedContract;
+                    App.contracts.VehicleInformation.setProvider(web3.currentProvider);
+                }).then(()=> {
+                    App.displayResult('Contract deployed to ' + App.contracts.VehicleInformation._address, true);
+                });
+            });
         });
     },
 
@@ -66,7 +99,7 @@ App = {
             return App.citizen;
         }
 
-        return null;
+        return App.masterClerk;
     },
 
     timestampToDate: function (timestamp) {
@@ -111,6 +144,15 @@ App = {
             App.pickedVinBytes = web3.utils.asciiToHex(App.pickedVin);
         });
 
+        $('#redeploy').on('click', () => {
+            window.location.reload(true);
+        });
+
+        $('#grant-def').on('click', async function() {
+            await App.grantRoles();
+            await App.displayResult('Standard access granted', true);
+        });
+
         $('.datepickerr').datepicker({
             format: 'yyyy-mm-dd',
             autoclose: true
@@ -126,8 +168,11 @@ App = {
             });
         });
         $('#ins-res-get').on('click', function () {
+            console.log(App.contracts.VehicleInformation);
             App.contracts.VehicleInformation.methods.getLastInspectionResult(App.pickedVinBytes).call().then(res => {
                 App.displayResult(App.pickedVin + ' last inspection result is ' + res, true);
+            }).catch((e)=>{
+                console.log(e);
             });
         });
 
@@ -136,7 +181,7 @@ App = {
             let date = $('#ins-date-val').val();
             let timestamp = Math.round(new Date(date).getTime() / 1000);
             App.contracts.VehicleInformation.methods.setLastInspectionTimestampUTC(App.pickedVinBytes, timestamp).send({from: actorAccount}).then(() => {
-                App.displayResult(App.pickedVin + ' last inspection date set to ' + App.timestampToDate(timestamp), true);
+                App.displayResult(App.pickedVin + ' last inspe  ction date set to ' + App.timestampToDate(timestamp), true);
             }).catch(() => {
                 App.displayResult('Failed to update inspection date for ' + App.pickedVin, false);
             });
@@ -205,7 +250,7 @@ App = {
             list.prepend(node);
 
             let childNodes = list.children();
-            if (childNodes.length > 15) {
+            if (childNodes.length > 14) {
                 childNodes.last().remove();
             }
         });
@@ -227,6 +272,9 @@ App = {
                 case 'clerk':
                     target = App.clerk;
                     break;
+                case 'master':
+                    target = App.masterClerk;
+                    break;
                 default:
                     break;
             }
@@ -247,6 +295,8 @@ App = {
                     App.contracts.VehicleInformation.methods.revokeClerkRole(target).send({from: App.masterClerk})
                         .then(() => {
                             App.displayResult('Clerk role revoked', true);
+                        }).catch(()=>{
+                            App.displayResult('Failed to revoked clerk role', false);
                         });
                     break;
                 default:
@@ -270,6 +320,9 @@ App = {
                     break;
                 case 'clerk':
                     target = App.clerk;
+                    break;
+                case 'master':
+                    target = App.masterClerk;
                     break;
                 default:
                     break;
@@ -298,9 +351,34 @@ App = {
             }
 
         });
+    },
+    initDep: async function() {
+        await App.deployContract();
+        await App.bindEvents();
+        await App.generateVINNumbers();
+        $('.vin-row:first-child').trigger('click');
+    },
+
+    grantRoles: async function() {
+        await App.contracts.VehicleInformation.methods.revokeClerkRole(App.citizen).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.revokeClerkRole(App.mechanic).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.revokeClerkRole(App.insurer).send({from: App.masterClerk});
+
+        await App.contracts.VehicleInformation.methods.revokeMechanicRole(App.insurer).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.revokeMechanicRole(App.citizen).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.revokeMechanicRole(App.clerk).send({from: App.masterClerk});
+
+        await App.contracts.VehicleInformation.methods.revokeInsurerRole(App.mechanic).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.revokeInsurerRole(App.citizen).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.revokeInsurerRole(App.clerk).send({from: App.masterClerk});
+
+        await App.contracts.VehicleInformation.methods.grantClerkRole(App.clerk).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.grantMechanicRole(App.mechanic).send({from: App.masterClerk});
+        await App.contracts.VehicleInformation.methods.grantInsurerRole(App.insurer).send({from: App.masterClerk});
     }
+
 };
 
 $(function () {
-    App.init();
+    App.initDep();
 });
