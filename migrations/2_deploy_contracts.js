@@ -1,5 +1,5 @@
-var TimeConstrainedCounter = artifacts.require("./TimeConstrainedCounter.sol");
+var vehicleInformation = artifacts.require("./VehicleInformation.sol");
 
 module.exports = function(deployer) {
-  deployer.deploy(TimeConstrainedCounter, 0, 32503676400);
+  deployer.deploy(vehicleInformation, {from : '0x7cabe53f112edde5307837aca22beef50cfe9ee6'});
 };
