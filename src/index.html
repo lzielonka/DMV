@@ -49,16 +49,7 @@
                     </div>
                     <div class="panel-body">
                         <div class="col-xs-12">
-                            <h4>Master Clerk</h4>
-                            <div class="col-xs-4">
-                                <h4>Action:</h4>
-                                <label>Grant
-                                    <input type="radio" name="sel-action" checked value="grant" class="sel-action">
-                                </label><br/>
-                                <label>Revoke
-                                    <input type="radio" name="sel-action" value="revoke" class="sel-action">
-                                </label>
-                            </div>
+                            <h4>Role Controls (as Master Clerk)</h4>
                             <div class="col-xs-4">
                                 <h4>Target Address:</h4>
                                 <select id="sel-target" name="target" class="form-control">
@@ -76,9 +67,13 @@
                                     <option value="ins">Insurer</option>
                                 </select>
                             </div>
-                            <div class="col-xs-12">
-                                <button id="execute" class="btn btn-danger"
-                                        style="display: inline-block; padding: 5px; float:right">Execute
+                            <div class="col-xs-4">
+                                <h4>Action:</h4>
+                                <button id="grant" class="btn btn-success"
+                                        style="display: inline-block">Grant
+                                </button>
+                                <button id="revoke" class="btn btn-danger"
+                                        style="display: inline-block; margin-left: 15px;">Revoke
                                 </button>
                             </div>
                             <div class="col-xs-12">
@@ -103,62 +98,34 @@
                             </div>
                             <div class="col-xs-12">
                                 <div class="col-xs-4">
-                                    <label>Get
-                                        <input type="radio" name="kilo" checked value="0" class="form-control kilo">
-                                    </label>
-                                    <label>Set
-                                        <input type="radio" name="kilo" value="1" class="form-control kilo">
-                                    </label><br/>
-                                    <span id="kilo-btn" class="btn btn-primary kilom op-btn" data-side="even">Kilometrage</span>
+                                    <h4>Kilometrage</h4>
+                                    <span id="kilo-get" class="btn btn-success kilom op-btn" data-side="even">Get</span>
+                                    <span id="kilo-set" class="btn btn-danger kilom op-btn" data-side="even">Set</span>
                                     <br/><input id="kilo-val" class="form-control" type="text" value="150000">
                                 </div>
                                 <div class="col-xs-4">
-                                    <label>Get
-                                        <input type="radio" name="ins-date" checked value="0"
-                                               class="form-control ins-date">
-                                    </label>
-                                    <label>Set
-                                        <input type="radio" name="ins-date" value="1" class="form-control ins-date">
-                                    </label><br/>
+                                    <h4>Inspection Date</h4>
+                                    <span id="ins-date-get" class="btn btn-success kilom op-btn" data-side="even">Get</span>
+                                    <span id="ins-date-set" class="btn btn-danger kilom op-btn" data-side="even">Set</span>
                                     <span id="ins-date-btn"
-                                          class="btn btn-primary ins-date op-btn">Inspection Date</span>
-                                    <br/><input id="ins-date-val" class="form-control datepickerr" type="text"
-                                                value="2018-05-20">
+                                    <br/><input id="ins-date-val" class="form-control datepickerr" type="text" value="2018-05-20">
                                 </div>
                                 <div class="col-xs-4">
-                                    <label>Get
-                                        <input type="radio" name="ins-res" checked value="0"
-                                               class="form-control ins-res">
-                                    </label>
-                                    <label>Set
-                                        <input type="radio" name="ins-res" value="1" class="form-control ins-res">
-                                    </label><br/>
-                                    <span id="ins-res-btn"
-                                          class="btn btn-success ins-res op-btn">Inspection Result</span>
+                                    <h4>Inspection Result</h4>
+                                    <span id="ins-res-get" class="btn btn-success kilom op-btn" data-side="even">Get</span>
+                                    <span id="ins-res-set" class="btn btn-danger kilom op-btn" data-side="even">Set</span>
                                     <br/><input id="ins-res-val" class="form-control" type="text" value="1">
                                 </div>
                                 <div class="col-xs-4">
-                                    <label>Get
-                                        <input type="radio" name="ins-exp" checked value="0"
-                                               class="form-control ins-exp">
-                                    </label>
-                                    <label>Set
-                                        <input type="radio" name="ins-exp" value="1" class="form-control ins-exp">
-                                    </label><br/>
-                                    <span id="ins-exp-btn"
-                                          class="btn btn-success ins-exp op-btn">Insurance Expiration</span>
-                                    <br/><input id="ins-exp-val" class="form-control datepickerr" type="text"
-                                                value="2019-03-21">
+                                    <h4>Insurance Expiration</h4>
+                                    <span id="ins-exp-get" class="btn btn-success kilom op-btn" data-side="even">Get</span>
+                                    <span id="ins-exp-set" class="btn btn-danger kilom op-btn" data-side="even">Set</span>
+                                    <br/><input id="ins-exp-val" class="form-control datepickerr" type="text" value="2019-03-21">
                                 </div>
                                 <div class="col-xs-4">
-                                    <label>Get
-                                        <input type="radio" name="veh-state" checked value="0"
-                                               class="form-control veh-state">
-                                    </label>
-                                    <label>Set
-                                        <input type="radio" name="veh-state" value="1" class="form-control veh-state">
-                                    </label><br/>
-                                    <span id="veh-state-btn" class="btn btn-success state op-btn">Vehicle State</span>
+                                    <h4>Vehicle State</h4>
+                                    <span id="veh-state-get" class="btn btn-success kilom op-btn" data-side="even">Get</span>
+                                    <span id="veh-state-set" class="btn btn-danger kilom op-btn" data-side="even">Set</span>
                                     <br/>
                                     <select id="veh-state" name="veh-state" class="form-control">
                                         <option value="1">Not registered</option>
@@ -185,6 +152,15 @@
                     </div>
                     <div class="col-xs-12" id="numbers">
                     </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title">Operation log</h3>
+                </div>
+                <div id="messages" class="panel-body" style="text-align: center;">
                 </div>
             </div>
         </div>

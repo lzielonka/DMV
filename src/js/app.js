@@ -32,10 +32,8 @@ App = {
             App.contracts.VehicleInformation._address = '0x4fd86d51824e91ff32239c02cde8e7cc1ef4b218';
         }).then(() => {
             web3.eth.getAccounts().then(accounts => {
-                let masterClerk = '0x7cabe53f112edde5307837aca22beef50cfe9ee6';
-
                 App.accounts = accounts;
-                App.masterClerk = masterClerk;
+                App.masterClerk = App.accounts[0];
                 App.clerk = App.accounts[1];
                 App.mechanic = App.accounts[2];
                 App.citizen = App.accounts[3];
@@ -45,9 +43,11 @@ App = {
             App.bindEvents();
         }).then(() => {
             let gen = $('#generate');
-            for (let i = 0; i < 18; i++) {
+            for (let i = 0; i < 15; i++) {
                 gen.trigger('click');
             }
+        }).then(() => {
+            App.displayResult('App ready', true);
         });
     },
 
@@ -69,87 +69,130 @@ App = {
         return null;
     },
 
-    bindEvents: function () {
-        $('#contractAddressInput').on('input', App.handleContractAddressInput);
-        $('#ConfirmPurchaseButton').on('click', App.handleConfirmPurchase);
-        $('#ReadDataButton').on('click', App.handleReadData);
+    timestampToDate: function (timestamp) {
+        if (timestamp == 0) {
+            return 'empty';
+        }
+        var a = new Date(timestamp * 1000);
+        var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        var year = a.getFullYear();
+        var month = months[a.getMonth()];
+        var date = a.getDate();
+        var time = date + ' ' + month + ' ' + year;
+        return time;
+    },
 
+    intToState: function (int) {
+        switch (int) {
+            case 0:
+                return 'Unknown';
+            case 1:
+                return 'Not Registered';
+            case 2:
+                return 'Registered';
+            case 3:
+                return 'Utilized';
+            default:
+                return 'Invalid';
+        }
+    },
+
+    displayResult: function (msg, success) {
+        let color = success ? 'green' : 'red';
+        let node = '<span style="display:inline-block; color: ' + color + '; font-size: 24px; width: 100%;" id="result">' + msg + '</span>'
+        $('#messages').prepend(node);
+    },
+
+    bindEvents: function () {
         $('body').on('click', '.vin-row', function () {
             $('.vin-row').removeClass('picked');
             $(this).addClass('picked');
-            App.pickedVIN = web3.utils.asciiToHex($(this).text());
+            App.pickedVin = $(this).text();
+            App.pickedVinBytes = web3.utils.asciiToHex(App.pickedVin);
         });
+
         $('.datepickerr').datepicker({
             format: 'yyyy-mm-dd',
             autoclose: true
         });
 
-        $('#ins-res-btn').on('click', function () {
-            let op = $('.ins-res:checked').val();
+        $('#ins-res-set').on('click', function () {
             let actorAccount = App.getActor();
-            if (op == 0) {
-                App.contracts.VehicleInformation.methods.getLastInspectionResult(App.pickedVIN).call().then(res => {
-                    console.log(res);
-                });
-            } else {
-                let val = $('#ins-res-val').val() > 0;
-                App.contracts.VehicleInformation.methods.setLastInspectionResult(App.pickedVIN, val).send({from: actorAccount});
-            }
+            let val = $('#ins-res-val').val() > 0;
+            App.contracts.VehicleInformation.methods.setLastInspectionResult(App.pickedVinBytes, val).send({from: actorAccount}).then(() => {
+                App.displayResult(App.pickedVin + ' last inspection result set to ' + val, true);
+            }).catch(error => {
+                App.displayResult('Failed to update inspection result for ' + App.pickedVin, false);
+            });
+        });
+        $('#ins-res-get').on('click', function () {
+            App.contracts.VehicleInformation.methods.getLastInspectionResult(App.pickedVinBytes).call().then(res => {
+                App.displayResult(App.pickedVin + ' last inspection result is ' + res, true);
+            });
         });
 
-        $('#ins-date-btn').on('click', function () {
-            let op = $('.ins-date:checked').val();
+        $('#ins-date-set').on('click', function () {
             let actorAccount = App.getActor();
-            if (op == 0) {
-                App.contracts.VehicleInformation.methods.getLastInspectionTimestampUTC(App.pickedVIN).call().then(res => {
-                    console.log(res);
-                });
-            } else {
-                let date = $('#ins-date-val').val();
-                let timestamp = Math.round(new Date(date).getTime() / 1000);
-                App.contracts.VehicleInformation.methods.setLastInspectionTimestampUTC(App.pickedVIN, timestamp).send({from: actorAccount});
-            }
+            let date = $('#ins-date-val').val();
+            let timestamp = Math.round(new Date(date).getTime() / 1000);
+            App.contracts.VehicleInformation.methods.setLastInspectionTimestampUTC(App.pickedVinBytes, timestamp).send({from: actorAccount}).then(() => {
+                App.displayResult(App.pickedVin + ' last inspection date set to ' + App.timestampToDate(timestamp), true);
+            }).catch(() => {
+                App.displayResult('Failed to update inspection date for ' + App.pickedVin, false);
+            });
+        });
+        $('#ins-date-get').on('click', function () {
+            App.contracts.VehicleInformation.methods.getLastInspectionTimestampUTC(App.pickedVinBytes).call().then(res => {
+                App.displayResult(App.pickedVin + ' last inspection date is ' + App.timestampToDate(res), true);
+            });
         });
 
-
-        $('#ins-exp-btn').on('click', function () {
-            let op = $('.ins-exp:checked').val();
+        $('#ins-exp-set').on('click', function () {
             let actorAccount = App.getActor();
-            if (op == 0) {
-                App.contracts.VehicleInformation.methods.getInsuranceExpiryTimestamp(App.pickedVIN).call().then(res => {
-                    console.log(res);
-                });
-            } else {
-                let date = $('#ins-exp-val').val();
-                let timestamp = Math.round(new Date(date).getTime() / 1000);
-                App.contracts.VehicleInformation.methods.setInsuranceExpiryTimestamp(App.pickedVIN, timestamp).send({from: actorAccount});
-            }
+            let date = $('#ins-exp-val').val();
+            let timestamp = Math.round(new Date(date).getTime() / 1000);
+            App.contracts.VehicleInformation.methods.setInsuranceExpiryTimestamp(App.pickedVinBytes, timestamp).send({from: actorAccount}).then(() => {
+                App.displayResult(App.pickedVin + ' insurance expiration date set to ' + App.timestampToDate(timestamp), true);
+            }).catch(() => {
+                App.displayResult('Failed to update insurance expiration date for ' + App.pickedVin, false);
+            });
         });
 
-        $('#kilo-btn').on('click', function () {
-            let op = $('.kilo:checked').val();
-            let actorAccount = App.getActor();
-            if (op == 0) {
-                App.contracts.VehicleInformation.methods.getVehicleKilometrage(App.pickedVIN).call().then(res => {
-                    console.log(res);
-                });
-            } else {
-                let val = parseInt($('#kilo-val').val());
-                App.contracts.VehicleInformation.methods.setVehicleKilometrage(App.pickedVIN, val).send({from: actorAccount});
-            }
+        $('#ins-exp-get').on('click', function () {
+            App.contracts.VehicleInformation.methods.getInsuranceExpiryTimestamp(App.pickedVinBytes).call().then(res => {
+                App.displayResult(App.pickedVin + ' insurance expiration date is ' + App.timestampToDate(res), true);
+            });
         });
 
-        $('#veh-state-btn').on('click', function () {
-            let op = $('.veh-state:checked').val();
+        $('#kilo-set').on('click', function () {
             let actorAccount = App.getActor();
-            if (op == 0) {
-                App.contracts.VehicleInformation.methods.getVehicleState(App.pickedVIN).call().then(res => {
-                    console.log(res);
-                });
-            } else {
-                let val = parseInt($('#veh-state').val());
-                App.contracts.VehicleInformation.methods.setVehicleState(App.pickedVIN, val).send({from: actorAccount});
-            }
+            let val = parseInt($('#kilo-val').val());
+            App.contracts.VehicleInformation.methods.setVehicleKilometrage(App.pickedVinBytes, val).send({from: actorAccount}).then(() => {
+                App.displayResult(App.pickedVin + ' kilometrage set to ' + val, true);
+            }).catch(() => {
+                App.displayResult('Failed to update kilometrage for ' + App.pickedVin, false);
+            });
+        });
+        $('#kilo-get').on('click', function () {
+            App.contracts.VehicleInformation.methods.getVehicleKilometrage(App.pickedVinBytes).call().then(res => {
+                App.displayResult(App.pickedVin + ' kilometrage is ' + res, true);
+            });
+        });
+
+        $('#veh-state-set').on('click', function () {
+            let actorAccount = App.getActor();
+            let val = parseInt($('#veh-state').val());
+            App.contracts.VehicleInformation.methods.setVehicleState(App.pickedVinBytes, val).send({from: actorAccount}).then(() => {
+                App.displayResult(App.pickedVin + ' vehicle state set to ' + App.intToState(val), true);
+            }).catch(() => {
+                App.displayResult('Failed to update vehicle state for ' + App.pickedVin, false);
+            });
+        });
+
+        $('#veh-state-get').on('click', function () {
+            App.contracts.VehicleInformation.methods.getVehicleState(App.pickedVinBytes).call().then(res => {
+                App.displayResult(App.pickedVin + ' vehicle state is ' + App.intToState(parseInt(res)), true);
+            });
         });
 
         $('#generate').on('click', function () {
@@ -162,13 +205,12 @@ App = {
             list.prepend(node);
 
             let childNodes = list.children();
-            if (childNodes.length > 18) {
+            if (childNodes.length > 15) {
                 childNodes.last().remove();
             }
         });
 
-        $('#execute').on('click', () => {
-            let action = $('.sel-action:checked').val();
+        $('#revoke').on('click', () => {
             let role = $('#sel-role').val();
             let target = $('#sel-target').val();
 
@@ -188,59 +230,77 @@ App = {
                 default:
                     break;
             }
-            if (action == 'revoke') {
-                switch (role) {
-                    case 'ins':
-                        App.contracts.VehicleInformation.methods.revokeInsurerRole(target).send({from: App.masterClerk})
-                            .then(() => {
-                                console.log('insurer role revoked');
-                            });
-                        break;
-                    case 'mech':
-                        App.contracts.VehicleInformation.methods.revokeMechanicRole(target).send({from: App.masterClerk})
-                            .then(() => {
-                                console.log('mechanic role revoked');
-                            });
-                        break;
-                    case 'clerk':
-                        App.contracts.VehicleInformation.methods.revokeClerkRole(target).send({from: App.masterClerk})
-                            .then(() => {
-                                console.log('clerk role revoked');
-                            });
-                        break;
-                    default:
-                        break;
-                }
-            } else {
-                switch (role) {
-                    case 'ins':
-                        App.contracts.VehicleInformation.methods.grantInsurerRole(target).send({from: App.masterClerk})
-                            .then(() => {
-                                console.log('insurer role granted');
-                            });
-                        break;
-                    case 'mech':
-                        App.contracts.VehicleInformation.methods.grantMechanicRole(target).send({from: App.masterClerk})
-                            .then(() => {
-                                console.log('mechanic role granted');
-                            });
-                        break;
-                    case 'clerk':
-                        App.contracts.VehicleInformation.methods.grantClerkRole(target).send({from: App.masterClerk})
-                            .then(() => {
-                                console.log('clerk role granted');
-                            });
-                        break;
-                    default:
-                        break;
-                }
+            switch (role) {
+                case 'ins':
+                    App.contracts.VehicleInformation.methods.revokeInsurerRole(target).send({from: App.masterClerk})
+                        .then(() => {
+                            App.displayResult('Insurer role revoked', true);
+                        });
+                    break;
+                case 'mech':
+                    App.contracts.VehicleInformation.methods.revokeMechanicRole(target).send({from: App.masterClerk})
+                        .then(() => {
+                            App.displayResult('Mechanic role revoked', true);
+                        });
+                    break;
+                case 'clerk':
+                    App.contracts.VehicleInformation.methods.revokeClerkRole(target).send({from: App.masterClerk})
+                        .then(() => {
+                            App.displayResult('Clerk role revoked', true);
+                        });
+                    break;
+                default:
+                    break;
             }
+        });
+
+        $('#grant').on('click', () => {
+            let role = $('#sel-role').val();
+            let target = $('#sel-target').val();
+
+            switch (target) {
+                case 'ins':
+                    target = App.insurer;
+                    break;
+                case 'mech':
+                    target = App.mechanic;
+                    break;
+                case 'cit':
+                    target = App.citizen;
+                    break;
+                case 'clerk':
+                    target = App.clerk;
+                    break;
+                default:
+                    break;
+            }
+            switch (role) {
+                case 'ins':
+                    App.contracts.VehicleInformation.methods.grantInsurerRole(target).send({from: App.masterClerk})
+                        .then(() => {
+                            App.displayResult('Insurer role granted', true);
+                        });
+                    break;
+                case 'mech':
+                    App.contracts.VehicleInformation.methods.grantMechanicRole(target).send({from: App.masterClerk})
+                        .then(() => {
+                            App.displayResult('Mechanic role granted', true);
+                        });
+                    break;
+                case 'clerk':
+                    App.contracts.VehicleInformation.methods.grantClerkRole(target).send({from: App.masterClerk})
+                        .then(() => {
+                            App.displayResult('Clerk role granted', true);
+                        });
+                    break;
+                default:
+                    break;
+            }
+
         });
     }
 };
 
 $(function () {
-    // $(window).load(function () {
     App.init();
-    // });
 });
