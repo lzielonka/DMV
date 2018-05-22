@@ -72,7 +72,6 @@ App = {
         }).then(()=> {
             $.getJSON('VehicleInformation.json', function (data) {
                 let contract = new web3.eth.Contract(data.abi);
-                // console.log(data);
                 contract.setProvider(web3.currentProvider);
                 contract.deploy({data: data.bytecode}).send({from: App.masterClerk, gas: 6000000, gasPrice: '30000000'}).then((deployedContract) => {
                     App.contracts.VehicleInformation = deployedContract;
@@ -168,11 +167,8 @@ App = {
             });
         });
         $('#ins-res-get').on('click', function () {
-            console.log(App.contracts.VehicleInformation);
             App.contracts.VehicleInformation.methods.getLastInspectionResult(App.pickedVinBytes).call().then(res => {
                 App.displayResult(App.pickedVin + ' last inspection result is ' + res, true);
-            }).catch((e)=>{
-                console.log(e);
             });
         });
 
